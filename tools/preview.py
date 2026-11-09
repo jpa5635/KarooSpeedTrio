@@ -13,7 +13,7 @@ FONTS = os.path.join(HERE, "..", "app", "src", "main", "assets", "fonts")
 
 # --- TrioSpec (keep in sync with TrioRenderer.kt) ---------------------------------------
 MARGIN = 0.02
-MID_RATIO = 0.9         # middle digit height / full digit height (10 % smaller)
+MID_RATIO = 0.81        # middle digit height / full digit height (0.9 x 0.9); width scales with it
 SIDE_RATIO = 2 / 3      # side digit height / full digit height (unchanged by MID_RATIO)
 NARROW = 0.8            # all text horizontally condensed to 80 % width
 LABEL_RATIO = 0.13      # caption height / field height

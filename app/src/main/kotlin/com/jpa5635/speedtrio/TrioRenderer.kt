@@ -24,8 +24,8 @@ object TrioSpec {
     /** Free space above and below the middle digits, as a fraction of field height. */
     const val MARGIN = 0.02f
 
-    /** Middle digit height as a fraction of the full digit height (field height minus margins): 10 % smaller. */
-    const val MID_RATIO = 0.9f
+    /** Middle digit height as a fraction of the full digit height (field height minus margins): 0.9 x 0.9, i.e. 19 % smaller than full; text size shrinks, so width shrinks with it. */
+    const val MID_RATIO = 0.81f
 
     /** Left/right digit height relative to the full digit height (2/3); unchanged by MID_RATIO. */
     const val SIDE_RATIO = 2f / 3f
