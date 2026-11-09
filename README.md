@@ -4,11 +4,11 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 
 | field | left | middle | right |
 |---|---|---|---|
-| **Speed Trio** | average speed (`MPH`) | current speed | ride distance (`MI`) |
-| **Power Trio** | average power (`AVG`) | 3 s power | left/right balance (`L/R`) |
-| **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate | cadence (`CAD`) |
+| **Speed Trio** | average speed (`MPH`) | current speed (`MPH`) | ride distance (`MI`) |
+| **Power Trio** | average power (`AVG`) | 3 s power (`3SEC`) | left/right balance (`L/R`) |
+| **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate (`BPM`) | cadence (`CAD`) |
 
-* Middle value: Avenir-style **bold italic**, digits 77 % of the full digit height, width scaling with it (`TrioSpec.MID_RATIO`; the full height is the field minus a 2 % margin top/bottom).
+* Middle value: Avenir-style **bold italic**, scaled so a small caption fits under it at the same size as the side captions (`TrioSpec.MID_PAIR_MARGIN`: digits come out at 70 % of the field height). All three values share one baseline and one caption row.
 * Left / right values: **bold italic** (same face as the middle), digits **2/3** of the full digit height (`TrioSpec.SIDE_RATIO`, not affected by the 90 % middle), with a small regular-italic caption underneath.
 * No header row, so the numbers get the whole field height.
 * Two slanted separator lines (leaning 9 degrees like the italics, 75 % of the field height, centred top to bottom) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).

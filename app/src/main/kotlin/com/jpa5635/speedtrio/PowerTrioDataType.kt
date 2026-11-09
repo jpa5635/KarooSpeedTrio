@@ -15,7 +15,7 @@ class PowerTrioDataType(
     extension: String,
 ) : TrioDataType(karooSystem, extension, "power-trio") {
 
-    override val previewContent = TrioContent("152", "238", "49/51", "AVG", "L/R")
+    override val previewContent = TrioContent("152", "238", "49/51", "AVG", "L/R", "3SEC")
 
     override fun contentFlow(): Flow<TrioContent> = combine(
         valueFlow(DataType.Type.AVERAGE_POWER),
@@ -29,6 +29,7 @@ class PowerTrioDataType(
             right = balanceText(balanceLeft),
             leftLabel = "AVG",
             rightLabel = "L/R",
+            middleLabel = "3SEC",
         )
     }
 

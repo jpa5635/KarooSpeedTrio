@@ -14,8 +14,8 @@ FONTS = os.path.join(HERE, "..", "app", "src", "main", "assets", "fonts")
 
 # --- TrioSpec (keep in sync with TrioRenderer.kt) ---------------------------------------
 MARGIN = 0.02
-MID_RATIO = 0.7695      # middle digit height / full digit height (0.9 x 0.9 x 0.95); width scales with it
-SIDE_RATIO = 2 / 3      # side digit height / full digit height (unchanged by MID_RATIO)
+MID_PAIR_MARGIN = 0.06  # free space above the middle digits / below the middle caption (fraction of field height)
+SIDE_RATIO = 2 / 3      # side digit height / full digit height (not affected by the middle value)
 NARROW = 0.8            # all text horizontally condensed to 80 % width
 LABEL_RATIO = 0.13      # caption height / field height
 LABEL_GAP = 0.05        # gap between value and caption / field height
@@ -27,8 +27,8 @@ SEP_HEIGHT = 0.5        # separator length / field height, centred top to bottom
 SEP_ANGLE_DEG = 9.0     # lean, matches the italic angle of the bundled font
 SEP_STROKE = 0.022      # stroke / field height (floor SEP_STROKE_MIN_PX)
 SEP_STROKE_MIN_PX = 2.0
-SEP_GAP = 0.12          # clear space between a side value and the middle value (floor SEP_GAP_MIN_PX)
-SEP_GAP_MIN_PX = 10.0
+SEP_GAP = 0.16          # clear space between a side value and the middle value (floor SEP_GAP_MIN_PX)
+SEP_GAP_MIN_PX = 12.0
 PAD = 0.06
 PAD_MIN_PX = 6.0
 SIDE_MIN_SCALE = 0.45   # sides shrink down to this fraction of their 2/3 height, then get squeezed
@@ -69,10 +69,15 @@ def width_of(path, size, text, squeeze):
     return font(path, size).getlength(text) * squeeze
 
 
+def mid_digit_height(h):
+    """Field height minus the margins, the gap above the caption and the caption itself."""
+    return h * (1 - 2 * MID_PAIR_MARGIN - LABEL_GAP - LABEL_RATIO)
+
+
 def plan(w, h, content, k):
     left, mid, right = content
     full = h * (1 - 2 * MARGIN)
-    mid_size = size_for_digit_height(MID_PATH, full * MID_RATIO)
+    mid_size = size_for_digit_height(MID_PATH, mid_digit_height(h))
     side_size = size_for_digit_height(VAL_PATH, full * SIDE_RATIO)
     pad = max(h * PAD, PAD_MIN_PX * k)
     gap_to_mid = max(h * SEP_GAP, SEP_GAP_MIN_PX * k) if SEPARATORS else pad
@@ -109,19 +114,23 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
         tmp = tmp.resize((max(1, round(tmp.width * squeeze)), H), Image.LANCZOS)
         img.alpha_composite(tmp, (round(x - pad_px * squeeze), 0))
 
-    # middle
-    mw = width_of(MID_PATH, p["mid_size"], p["mid"], NARROW)
-    put(p["mid"], MID_PATH, p["mid_size"], (W - mw) / 2, H / 2, NARROW, fg)
-
-    # left / right: value + caption underneath, pair centred vertically
-    t, b = digit_bounds(VAL_PATH, p["side_size"])
-    side_h = b - t
+    # rows shared by all three values: middle value + caption centred vertically; side values on the same
+    # baseline, all captions on the same row
     label_h = H * LABEL_RATIO
     gap = H * LABEL_GAP
-    top = (H - (side_h + gap + label_h)) / 2
-    value_cy = top + side_h / 2
-    label_cy = top + side_h + gap + label_h / 2
+    mid_h = mid_digit_height(H)
+    mid_top = (H - (mid_h + gap + label_h)) / 2
+    baseline = mid_top + mid_h
+    mid_cy = mid_top + mid_h / 2
+    label_cy = baseline + gap + label_h / 2
     label_size = size_for_digit_height(SIDE_PATH, label_h)
+
+    mw = width_of(MID_PATH, p["mid_size"], p["mid"], NARROW)
+    put(p["mid"], MID_PATH, p["mid_size"], (W - mw) / 2, mid_cy, NARROW, fg)
+
+    t, b = digit_bounds(VAL_PATH, p["side_size"])
+    side_h = b - t
+    value_cy = baseline - side_h / 2
 
     lw = width_of(VAL_PATH, p["side_size"], p["left"], p["side_squeeze"])
     rw = width_of(VAL_PATH, p["side_size"], p["right"], p["side_squeeze"])
@@ -153,6 +162,8 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
 
     label(labels[0], lx + lw / 2)
     label(labels[1], rx + rw / 2)
+    if len(labels) > 2 and labels[2]:
+        label(labels[2], W / 2)
 
     if dot:  # flashing red recording dot, shown here in its "on" phase
         r = min(H * DOT_RADIUS, DOT_MAX_RADIUS_PX * k)
@@ -191,23 +202,23 @@ def sheet(out, title, subtitle, cases):
 
 def main(prefix):
     speed = [
-        (480, 110, True, ("17.24", "28.3", "42.63"), ("MPH", "MI"), True),
-        (480, 110, False, ("17.24", "28.3", "42.63"), ("MPH", "MI"), True),
-        (480, 140, True, ("17.24", "28.3", "42.63"), ("MPH", "MI"), True),
-        (480, 110, True, ("24.91", "36.8", "142.63"), ("MPH", "MI")),
-        (480, 72, True, ("17.24", "28.3", "42.63"), ("MPH", "MI"), True),
+        (480, 110, True, ("17.24", "28.3", "42.63"), ("MPH", "MI", "MPH"), True),
+        (480, 110, False, ("17.24", "28.3", "42.63"), ("MPH", "MI", "MPH"), True),
+        (480, 140, True, ("17.24", "28.3", "42.63"), ("MPH", "MI", "MPH"), True),
+        (480, 110, True, ("24.91", "36.8", "142.63"), ("MPH", "MI", "MPH")),
+        (480, 72, True, ("17.24", "28.3", "42.63"), ("MPH", "MI", "MPH"), True),
     ]
     power = [
-        (480, 110, True, ("152", "238", "49/51"), ("AVG", "L/R")),
-        (480, 110, False, ("152", "238", "49/51"), ("AVG", "L/R")),
-        (480, 140, True, ("152", "238", "49/51"), ("AVG", "L/R")),
-        (480, 110, True, ("187", "1043", "52/48"), ("AVG", "L/R")),
+        (480, 110, True, ("152", "238", "49/51"), ("AVG", "L/R", "3SEC")),
+        (480, 110, False, ("152", "238", "49/51"), ("AVG", "L/R", "3SEC")),
+        (480, 140, True, ("152", "238", "49/51"), ("AVG", "L/R", "3SEC")),
+        (480, 110, True, ("187", "1043", "52/48"), ("AVG", "L/R", "3SEC")),
     ]
     gear = [
-        (480, 110, True, ("48-13", "152", "92"), ("GEAR", "CAD")),
-        (480, 110, False, ("48-13", "152", "92"), ("GEAR", "CAD")),
-        (480, 140, True, ("48-13", "152", "92"), ("GEAR", "CAD")),
-        (480, 110, True, ("34-11", "191", "104"), ("GEAR", "CAD")),
+        (480, 110, True, ("48-13", "152", "92"), ("GEAR", "CAD", "BPM")),
+        (480, 110, False, ("48-13", "152", "92"), ("GEAR", "CAD", "BPM")),
+        (480, 140, True, ("48-13", "152", "92"), ("GEAR", "CAD", "BPM")),
+        (480, 110, True, ("34-11", "191", "104"), ("GEAR", "CAD", "BPM")),
     ]
     sheet(prefix + "_gear.png", "Gear Trio  -  gear | heart rate | cadence",
           "Layout rules identical to the extension", gear)

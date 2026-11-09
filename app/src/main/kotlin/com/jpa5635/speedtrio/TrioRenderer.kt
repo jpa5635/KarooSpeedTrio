@@ -17,6 +17,7 @@ data class TrioContent(
     val right: String,
     val leftLabel: String,
     val rightLabel: String,
+    val middleLabel: String = "",
 )
 
 /** Layout rules. tools/preview.py mirrors these numbers exactly. */
@@ -24,10 +25,14 @@ object TrioSpec {
     /** Free space above and below the middle digits, as a fraction of field height. */
     const val MARGIN = 0.02f
 
-    /** Middle digit height as a fraction of the full digit height (field height minus margins): 0.9 x 0.9 x 0.95; text size shrinks, so width shrinks with it. */
-    const val MID_RATIO = 0.7695f
+    /**
+     * Free space above the middle digits and below the middle caption (fraction of field height). The middle digit
+     * height is whatever is left once its caption (same size as the side captions) and the gap above it are taken
+     * out: 1 - 2 x MID_PAIR_MARGIN - LABEL_GAP - LABEL_RATIO of the field height (70 % with the values below).
+     */
+    const val MID_PAIR_MARGIN = 0.06f
 
-    /** Left/right digit height relative to the full digit height (2/3); unchanged by MID_RATIO. */
+    /** Left/right digit height relative to the full digit height (2/3); not affected by the middle value. */
     const val SIDE_RATIO = 2f / 3f
 
     /** All text is horizontally condensed to this fraction of its natural width (20 % narrower). */
@@ -60,8 +65,8 @@ object TrioSpec {
     const val SEP_STROKE_MIN_PX = 2f
 
     /** Clear space reserved between a side value and the middle value for the separator (fraction of height, floor in px). */
-    const val SEP_GAP = 0.12f
-    const val SEP_GAP_MIN_PX = 10f
+    const val SEP_GAP = 0.16f
+    const val SEP_GAP_MIN_PX = 12f
 
     /**
      * When the left/right values do not fit the width next to the middle value, their size shrinks
@@ -101,19 +106,26 @@ class TrioRenderer(context: Context) {
         val pad = max(h * TrioSpec.PAD, TrioSpec.PAD_MIN_PX)
         val n = TrioSpec.NARROW
 
-        // Middle value: centred in the field.
-        paint.color = main
-        val midW = measure(middleFace, plan.midSize, plan.mid, n)
-        draw(canvas, plan.mid, middleFace, plan.midSize, n, (width - midW) / 2f, h / 2f)
-
-        // Left / right: value with its small caption underneath, the pair centred vertically.
-        val sideDigitH = digitBounds(sideValueFace, plan.sideSize, 1f).height().toFloat()
+        // Rows shared by all three values: the middle value + its caption are centred vertically (with
+        // MID_PAIR_MARGIN above and below); the side values sit on the same baseline with their captions on
+        // the same caption row.
         val labelH = h * TrioSpec.LABEL_RATIO
         val gap = h * TrioSpec.LABEL_GAP
-        val top = (h - (sideDigitH + gap + labelH)) / 2f
-        val valueCy = top + sideDigitH / 2f
-        val labelCy = top + sideDigitH + gap + labelH / 2f
+        val midDigitH = midDigitHeight(h)
+        val midTop = (h - (midDigitH + gap + labelH)) / 2f
+        val baseline = midTop + midDigitH
+        val midCy = midTop + midDigitH / 2f
+        val labelCy = baseline + gap + labelH / 2f
         val labelSize = sizeForDigitHeight(sideFace, labelH)
+
+        // Middle value, centred horizontally in the field, with its caption underneath.
+        paint.color = main
+        val midW = measure(middleFace, plan.midSize, plan.mid, n)
+        draw(canvas, plan.mid, middleFace, plan.midSize, n, (width - midW) / 2f, midCy)
+
+        // Left / right values: same baseline as the middle value.
+        val sideDigitH = digitBounds(sideValueFace, plan.sideSize, 1f).height().toFloat()
+        val valueCy = baseline - sideDigitH / 2f
 
         val leftW = measure(sideValueFace, plan.sideSize, plan.left, plan.sideSqueeze)
         val rightW = measure(sideValueFace, plan.sideSize, plan.right, plan.sideSqueeze)
@@ -139,6 +151,7 @@ class TrioRenderer(context: Context) {
         }
 
         paint.color = dim
+        if (v.middleLabel.isNotEmpty()) drawLabel(canvas, v.middleLabel, labelSize, width / 2f, labelCy, pad, width - pad)
         drawLabel(canvas, v.leftLabel, labelSize, leftX + leftW / 2f, labelCy, pad, width - pad)
         drawLabel(canvas, v.rightLabel, labelSize, rightX + rightW / 2f, labelCy, pad, width - pad)
 
@@ -170,13 +183,17 @@ class TrioRenderer(context: Context) {
         draw(canvas, text, sideFace, size, TrioSpec.NARROW, x, centerY)
     }
 
+    /** Middle digit height: field height minus the margins, the gap above the caption and the caption itself. */
+    private fun midDigitHeight(h: Float): Float =
+        h * (1f - 2f * TrioSpec.MID_PAIR_MARGIN - TrioSpec.LABEL_GAP - TrioSpec.LABEL_RATIO)
+
     /** Space between a side value's zone and the middle value; the separator is drawn in its middle. */
     private fun gapToMid(h: Float, pad: Float): Float =
         if (TrioSpec.SEPARATORS) max(h * TrioSpec.SEP_GAP, TrioSpec.SEP_GAP_MIN_PX) else pad
 
     private fun plan(w: Float, h: Float, v: TrioContent): Plan {
         val fullDigitHeight = h * (1f - 2f * TrioSpec.MARGIN)
-        val midSize = sizeForDigitHeight(middleFace, fullDigitHeight * TrioSpec.MID_RATIO)
+        val midSize = sizeForDigitHeight(middleFace, midDigitHeight(h))
         val sideSize = sizeForDigitHeight(sideValueFace, fullDigitHeight * TrioSpec.SIDE_RATIO)
         val pad = max(h * TrioSpec.PAD, TrioSpec.PAD_MIN_PX)
         val n = TrioSpec.NARROW

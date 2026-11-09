@@ -16,7 +16,7 @@ class GearTrioDataType(
     extension: String,
 ) : TrioDataType(karooSystem, extension, "gear-trio") {
 
-    override val previewContent = TrioContent("48-13", "152", "92", "GEAR", "CAD")
+    override val previewContent = TrioContent("48-13", "152", "92", "GEAR", "CAD", "BPM")
 
     override fun contentFlow(): Flow<TrioContent> = combine(
         pointFlow(DataType.Type.SHIFTING_GEARS),
@@ -29,6 +29,7 @@ class GearTrioDataType(
             right = text(cadence, 0),
             leftLabel = "GEAR",
             rightLabel = "CAD",
+            middleLabel = "BPM",
         )
     }
 

@@ -19,7 +19,7 @@ class SpeedTrioDataType(
     extension: String,
 ) : TrioDataType(karooSystem, extension, "speed-trio") {
 
-    override val previewContent = TrioContent("17.24", "28.3", "42.63", "MPH", "MI")
+    override val previewContent = TrioContent("17.24", "28.3", "42.63", "MPH", "MI", "MPH")
 
     override val showsRecordingDot = true
 
@@ -39,6 +39,7 @@ class SpeedTrioDataType(
             right = text(distM?.let { it / if (imperial) M_PER_MILE else 1000.0 }, 2),
             leftLabel = if (imperial) "MPH" else "KM/H",
             rightLabel = if (imperial) "MI" else "KM",
+            middleLabel = if (imperial) "MPH" else "KM/H",
         )
     }
 
