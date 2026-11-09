@@ -8,9 +8,10 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 | **Power Trio** | average power (`AVG`) | 3 s power | left/right balance (`L/R`) |
 | **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate | cadence (`CAD`) |
 
-* Middle value: Avenir-style **bold italic**, digits 81 % of the full digit height, width scaling with it (`TrioSpec.MID_RATIO`; the full height is the field minus a 2 % margin top/bottom).
+* Middle value: Avenir-style **bold italic**, digits 77 % of the full digit height, width scaling with it (`TrioSpec.MID_RATIO`; the full height is the field minus a 2 % margin top/bottom).
 * Left / right values: **bold italic** (same face as the middle), digits **2/3** of the full digit height (`TrioSpec.SIDE_RATIO`, not affected by the 90 % middle), with a small regular-italic caption underneath.
 * No header row, so the numbers get the whole field height.
+* Two slanted separator lines (leaning 9 degrees like the italics, 75 % of the field height, centred top to bottom) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).
 * Speed Trio: average speed and distance show 2 decimals, current speed 1. Units and captions follow the
   rider's Karoo profile (mph + mi, or km/h + km).
 * Power Trio: whole watts; balance is `left/right` percent (e.g. `49/51`) using the live power balance stream.

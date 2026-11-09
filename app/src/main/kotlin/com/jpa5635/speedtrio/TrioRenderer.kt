@@ -24,8 +24,8 @@ object TrioSpec {
     /** Free space above and below the middle digits, as a fraction of field height. */
     const val MARGIN = 0.02f
 
-    /** Middle digit height as a fraction of the full digit height (field height minus margins): 0.9 x 0.9, i.e. 19 % smaller than full; text size shrinks, so width shrinks with it. */
-    const val MID_RATIO = 0.81f
+    /** Middle digit height as a fraction of the full digit height (field height minus margins): 0.9 x 0.9 x 0.95; text size shrinks, so width shrinks with it. */
+    const val MID_RATIO = 0.7695f
 
     /** Left/right digit height relative to the full digit height (2/3); unchanged by MID_RATIO. */
     const val SIDE_RATIO = 2f / 3f
@@ -45,6 +45,23 @@ object TrioSpec {
     /** Edge padding and minimum gap between values, as a fraction of height (with a floor in px). */
     const val PAD = 0.06f
     const val PAD_MIN_PX = 6f
+
+    /** Slanted separator lines between the three values (experimental; set false to remove them). */
+    const val SEPARATORS = true
+
+    /** Separator length as a fraction of field height, centred top to bottom. */
+    const val SEP_HEIGHT = 0.5f
+
+    /** Lean of the separator in degrees; matches the italic angle of the bundled Nunito Sans (-9 deg). */
+    const val SEP_ANGLE_DEG = 9f
+
+    /** Separator stroke: fraction of field height, with a floor in px. */
+    const val SEP_STROKE = 0.022f
+    const val SEP_STROKE_MIN_PX = 2f
+
+    /** Clear space reserved between a side value and the middle value for the separator (fraction of height, floor in px). */
+    const val SEP_GAP = 0.12f
+    const val SEP_GAP_MIN_PX = 10f
 
     /**
      * When the left/right values do not fit the width next to the middle value, their size shrinks
@@ -100,12 +117,26 @@ class TrioRenderer(context: Context) {
 
         val leftW = measure(sideValueFace, plan.sideSize, plan.left, plan.sideSqueeze)
         val rightW = measure(sideValueFace, plan.sideSize, plan.right, plan.sideSqueeze)
-        val leftX = pad
-        val rightX = width - pad - rightW
+
+        // Each side value is centred in the space between the field edge and its separator. The separator
+        // sits in the middle of the gap next to the middle value.
+        val midLeft = (width - midW) / 2f
+        val midRight = midLeft + midW
+        val gapToMid = gapToMid(h, pad)
+        val sepLeft = midLeft - gapToMid / 2f
+        val sepRight = midRight + gapToMid / 2f
+        val leftX = (sepLeft / 2f - leftW / 2f).coerceAtLeast(pad)
+        val rightX = ((sepRight + width) / 2f - rightW / 2f).coerceAtMost(width - pad - rightW)
 
         paint.color = main
         draw(canvas, plan.left, sideValueFace, plan.sideSize, plan.sideSqueeze, leftX, valueCy)
         draw(canvas, plan.right, sideValueFace, plan.sideSize, plan.sideSqueeze, rightX, valueCy)
+
+        if (TrioSpec.SEPARATORS) {
+            paint.color = dim
+            drawSeparator(canvas, sepLeft, h)
+            drawSeparator(canvas, sepRight, h)
+        }
 
         paint.color = dim
         drawLabel(canvas, v.leftLabel, labelSize, leftX + leftW / 2f, labelCy, pad, width - pad)
@@ -120,12 +151,28 @@ class TrioRenderer(context: Context) {
         return bitmap
     }
 
+    /** Slanted line (leaning like the italics) centred at [centerX], vertically centred, SEP_HEIGHT of the field tall. */
+    private fun drawSeparator(canvas: Canvas, centerX: Float, h: Float) {
+        val len = h * TrioSpec.SEP_HEIGHT
+        val dx = (len / 2f) * Math.tan(Math.toRadians(TrioSpec.SEP_ANGLE_DEG.toDouble())).toFloat()
+        paint.style = Paint.Style.STROKE
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeWidth = max(h * TrioSpec.SEP_STROKE, TrioSpec.SEP_STROKE_MIN_PX)
+        // italics lean right: the top end is further right than the bottom end
+        canvas.drawLine(centerX + dx, (h - len) / 2f, centerX - dx, (h + len) / 2f, paint)
+        paint.style = Paint.Style.FILL
+    }
+
     /** Caption centred on [centerX], kept inside [minX, maxX]. */
     private fun drawLabel(canvas: Canvas, text: String, size: Float, centerX: Float, centerY: Float, minX: Float, maxX: Float) {
         val w = measure(sideFace, size, text, TrioSpec.NARROW)
         val x = (centerX - w / 2f).coerceIn(minX, max(minX, maxX - w))
         draw(canvas, text, sideFace, size, TrioSpec.NARROW, x, centerY)
     }
+
+    /** Space between a side value's zone and the middle value; the separator is drawn in its middle. */
+    private fun gapToMid(h: Float, pad: Float): Float =
+        if (TrioSpec.SEPARATORS) max(h * TrioSpec.SEP_GAP, TrioSpec.SEP_GAP_MIN_PX) else pad
 
     private fun plan(w: Float, h: Float, v: TrioContent): Plan {
         val fullDigitHeight = h * (1f - 2f * TrioSpec.MARGIN)
@@ -139,7 +186,8 @@ class TrioRenderer(context: Context) {
         val right = v.right
 
         val midW = measure(middleFace, midSize, mid, n)
-        val avail = max((w - midW) / 2f - 2f * pad, 1f) // edge padding + gap to the middle value
+        // edge padding + gap to the middle value (room for the separator when enabled)
+        val avail = max((w - midW) / 2f - pad - gapToMid(h, pad), 1f)
         val widest = max(measure(sideValueFace, sideSize, left, n), measure(sideValueFace, sideSize, right, n))
         val scale = avail / widest
         return when {

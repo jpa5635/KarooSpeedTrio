@@ -4,6 +4,7 @@
     pip install pillow
     python3 tools/preview.py [prefix]      # writes <prefix>_speed.png, _power.png and _gear.png
 """
+import math
 import os
 import sys
 from PIL import Image, ImageDraw, ImageFont
@@ -13,7 +14,7 @@ FONTS = os.path.join(HERE, "..", "app", "src", "main", "assets", "fonts")
 
 # --- TrioSpec (keep in sync with TrioRenderer.kt) ---------------------------------------
 MARGIN = 0.02
-MID_RATIO = 0.81        # middle digit height / full digit height (0.9 x 0.9); width scales with it
+MID_RATIO = 0.7695      # middle digit height / full digit height (0.9 x 0.9 x 0.95); width scales with it
 SIDE_RATIO = 2 / 3      # side digit height / full digit height (unchanged by MID_RATIO)
 NARROW = 0.8            # all text horizontally condensed to 80 % width
 LABEL_RATIO = 0.13      # caption height / field height
@@ -21,6 +22,13 @@ LABEL_GAP = 0.05        # gap between value and caption / field height
 DOT_RADIUS = 0.06       # recording dot radius / field height (capped at DOT_MAX_RADIUS_PX)
 DOT_MAX_RADIUS_PX = 9.0
 DOT_INSET = 0.04        # dot inset from the corner / field height
+SEPARATORS = True       # slanted separator lines between the values
+SEP_HEIGHT = 0.5        # separator length / field height, centred top to bottom
+SEP_ANGLE_DEG = 9.0     # lean, matches the italic angle of the bundled font
+SEP_STROKE = 0.022      # stroke / field height (floor SEP_STROKE_MIN_PX)
+SEP_STROKE_MIN_PX = 2.0
+SEP_GAP = 0.12          # clear space between a side value and the middle value (floor SEP_GAP_MIN_PX)
+SEP_GAP_MIN_PX = 10.0
 PAD = 0.06
 PAD_MIN_PX = 6.0
 SIDE_MIN_SCALE = 0.45   # sides shrink down to this fraction of their 2/3 height, then get squeezed
@@ -67,7 +75,8 @@ def plan(w, h, content, k):
     mid_size = size_for_digit_height(MID_PATH, full * MID_RATIO)
     side_size = size_for_digit_height(VAL_PATH, full * SIDE_RATIO)
     pad = max(h * PAD, PAD_MIN_PX * k)
-    avail = max((w - width_of(MID_PATH, mid_size, mid, NARROW)) / 2 - 2 * pad, 1)
+    gap_to_mid = max(h * SEP_GAP, SEP_GAP_MIN_PX * k) if SEPARATORS else pad
+    avail = max((w - width_of(MID_PATH, mid_size, mid, NARROW)) / 2 - pad - gap_to_mid, 1)
     widest = max(width_of(VAL_PATH, side_size, left, NARROW), width_of(VAL_PATH, side_size, right, NARROW))
     scale = avail / widest
     if scale >= 1:
@@ -116,9 +125,26 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
 
     lw = width_of(VAL_PATH, p["side_size"], p["left"], p["side_squeeze"])
     rw = width_of(VAL_PATH, p["side_size"], p["right"], p["side_squeeze"])
-    lx, rx = p["pad"], W - p["pad"] - rw
+    # side values are centred between the field edge and their separator, which sits mid-gap beside the middle value
+    mid_left = (W - mw) / 2
+    mid_right = mid_left + mw
+    gap = max(H * SEP_GAP, SEP_GAP_MIN_PX * k) if SEPARATORS else p["pad"]
+    sep_l, sep_r = mid_left - gap / 2, mid_right + gap / 2
+    lx = max(sep_l / 2 - lw / 2, p["pad"])
+    rx = min((sep_r + W) / 2 - rw / 2, W - p["pad"] - rw)
     put(p["left"], VAL_PATH, p["side_size"], lx, value_cy, p["side_squeeze"], fg)
     put(p["right"], VAL_PATH, p["side_size"], rx, value_cy, p["side_squeeze"], fg)
+
+    if SEPARATORS:
+        L = H * SEP_HEIGHT
+        dx = (L / 2) * math.tan(math.radians(SEP_ANGLE_DEG))
+        sw = max(H * SEP_STROKE, SEP_STROKE_MIN_PX * k)
+        sd_ = ImageDraw.Draw(img)
+        for cx in (sep_l, sep_r):
+            a, b = (cx + dx, (H - L) / 2), (cx - dx, (H + L) / 2)
+            sd_.line([a, b], fill=dim, width=round(sw))
+            for q in (a, b):  # round caps
+                sd_.ellipse([q[0] - sw / 2, q[1] - sw / 2, q[0] + sw / 2, q[1] + sw / 2], fill=dim)
 
     def label(text, cx):
         w_ = width_of(SIDE_PATH, label_size, text, NARROW)
