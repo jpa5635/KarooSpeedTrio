@@ -1,0 +1,60 @@
+# Builds the APK on GitHub's runners and publishes it. Same setup as KarooInsta360Ctl.
+#
+# Two triggers:
+#   - every push to main, and manual runs  -> APK uploaded as a run artifact
+#   - a pushed tag like v1.0.0             -> same APK also attached to a GitHub Release
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Needed by the release step below: GITHUB_TOKEN defaults to read-only, and attaching
+    # the APK to a release fails with "Resource not accessible by integration" without it.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # No gradlew/wrapper jar is committed, so Gradle is provisioned here. Version matches
+      # gradle/wrapper/gradle-wrapper.properties; keep the two in step.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build APK
+        env:
+          # settings.gradle.kts falls back to these env vars when gpr.user / gpr.key aren't set.
+          # karoo-ext is public but GitHub Packages needs auth to read it anyway; the automatic
+          # GITHUB_TOKEN is unreliable for another org's packages, so this is the same classic
+          # PAT (read:packages) stored as the KAROO_EXT_TOKEN repository secret.
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ secrets.KAROO_EXT_TOKEN }}
+        run: gradle --no-daemon assembleRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: karoo-speedtrio-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Attach APK to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/*.apk

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Speed Trio</string>
+    <string name="extension_name">Speed Trio</string>
+    <string name="speed_trio">Speed Trio</string>
+    <string name="speed_trio_description">Average speed, current speed and ride distance in one double-width field.</string>
+    <string name="power_trio">Power Trio</string>
+    <string name="power_trio_description">Average power, 3 second power and left/right balance in one double-width field.</string>
+    <string name="gear_trio">Gear Trio</string>
+    <string name="gear_trio_description">Gear (chainring-cog teeth), heart rate and cadence in one double-width field.</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:icon="@drawable/ic_speedtrio"
+        android:label="@string/app_name">
+
+        <service
+            android:name=".SpeedTrioExtension"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <!-- Required for the Karoo system to discover this extension -->
+            <intent-filter>
+                <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
+            </intent-filter>
+            <meta-data
+                android:name="io.hammerhead.karooext.EXTENSION_INFO"
+                android:resource="@xml/extension_info" />
+        </service>
+
+    </application>
+
+</manifest>

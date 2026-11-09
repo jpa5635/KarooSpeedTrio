@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ExtensionInfo
+    displayName="@string/extension_name"
+    icon="@drawable/ic_speedtrio"
+    id="speedtrio">
+    <DataType
+        description="@string/speed_trio_description"
+        displayName="@string/speed_trio"
+        graphical="true"
+        icon="@drawable/ic_speedtrio"
+        typeId="speed-trio" />
+    <DataType
+        description="@string/power_trio_description"
+        displayName="@string/power_trio"
+        graphical="true"
+        icon="@drawable/ic_powertrio"
+        typeId="power-trio" />
+    <DataType
+        description="@string/gear_trio_description"
+        displayName="@string/gear_trio"
+        graphical="true"
+        icon="@drawable/ic_geartrio"
+        typeId="gear-trio" />
+</ExtensionInfo>

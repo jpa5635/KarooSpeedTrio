@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="38dp"
+    android:height="38dp"
+    android:viewportWidth="38"
+    android:viewportHeight="38">
+    <!-- chainring: ring plus eight teeth -->
+    <path
+        android:fillColor="#9FB3BD"
+        android:fillType="evenOdd"
+        android:pathData="M30,19a11,11 0 1,1 -22,0a11,11 0 1,1 22,0zM24,19a5,5 0 1,0 -10,0a5,5 0 1,0 10,0z" />
+    <group android:pivotX="19" android:pivotY="19" android:rotation="0">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="45">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="90">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="135">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="180">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="225">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="270">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+    <group android:pivotX="19" android:pivotY="19" android:rotation="315">
+        <path android:fillColor="#9FB3BD" android:pathData="M17,4h4v6h-4z" />
+    </group>
+</vector>
