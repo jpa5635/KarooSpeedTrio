@@ -24,7 +24,10 @@ object TrioSpec {
     /** Free space above and below the middle digits, as a fraction of field height. */
     const val MARGIN = 0.02f
 
-    /** Left/right digit height relative to the middle digit height (2/3). */
+    /** Middle digit height as a fraction of the full digit height (field height minus margins): 10 % smaller. */
+    const val MID_RATIO = 0.9f
+
+    /** Left/right digit height relative to the full digit height (2/3); unchanged by MID_RATIO. */
     const val SIDE_RATIO = 2f / 3f
 
     /** All text is horizontally condensed to this fraction of its natural width (20 % narrower). */
@@ -62,7 +65,10 @@ class TrioRenderer(context: Context) {
     // Drop licensed Avenir files into app/src/main/assets/fonts/ with these names and they are used
     // automatically; otherwise the bundled Nunito Sans (SIL OFL, an Avenir-style face) is used.
     private val middleFace = loadFace(context, "avenir-bold-oblique.ttf", "nunitosans-bolditalic.ttf")
-    private val sideFace = loadFace(context, "avenir-oblique.ttf", "nunitosans-italic.ttf")
+    private val sideFace = loadFace(context, "avenir-oblique.ttf", "nunitosans-italic.ttf") // captions
+
+    // Left/right values are bold italic too (same face as the middle value, just smaller).
+    private val sideValueFace = middleFace
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
 
     private class Plan(val mid: String, val midSize: Float, val left: String, val right: String, val sideSize: Float, val sideSqueeze: Float)
@@ -84,7 +90,7 @@ class TrioRenderer(context: Context) {
         draw(canvas, plan.mid, middleFace, plan.midSize, n, (width - midW) / 2f, h / 2f)
 
         // Left / right: value with its small caption underneath, the pair centred vertically.
-        val sideDigitH = digitBounds(sideFace, plan.sideSize, 1f).height().toFloat()
+        val sideDigitH = digitBounds(sideValueFace, plan.sideSize, 1f).height().toFloat()
         val labelH = h * TrioSpec.LABEL_RATIO
         val gap = h * TrioSpec.LABEL_GAP
         val top = (h - (sideDigitH + gap + labelH)) / 2f
@@ -92,14 +98,14 @@ class TrioRenderer(context: Context) {
         val labelCy = top + sideDigitH + gap + labelH / 2f
         val labelSize = sizeForDigitHeight(sideFace, labelH)
 
-        val leftW = measure(sideFace, plan.sideSize, plan.left, plan.sideSqueeze)
-        val rightW = measure(sideFace, plan.sideSize, plan.right, plan.sideSqueeze)
+        val leftW = measure(sideValueFace, plan.sideSize, plan.left, plan.sideSqueeze)
+        val rightW = measure(sideValueFace, plan.sideSize, plan.right, plan.sideSqueeze)
         val leftX = pad
         val rightX = width - pad - rightW
 
         paint.color = main
-        draw(canvas, plan.left, sideFace, plan.sideSize, plan.sideSqueeze, leftX, valueCy)
-        draw(canvas, plan.right, sideFace, plan.sideSize, plan.sideSqueeze, rightX, valueCy)
+        draw(canvas, plan.left, sideValueFace, plan.sideSize, plan.sideSqueeze, leftX, valueCy)
+        draw(canvas, plan.right, sideValueFace, plan.sideSize, plan.sideSqueeze, rightX, valueCy)
 
         paint.color = dim
         drawLabel(canvas, v.leftLabel, labelSize, leftX + leftW / 2f, labelCy, pad, width - pad)
@@ -123,8 +129,8 @@ class TrioRenderer(context: Context) {
 
     private fun plan(w: Float, h: Float, v: TrioContent): Plan {
         val fullDigitHeight = h * (1f - 2f * TrioSpec.MARGIN)
-        val midSize = sizeForDigitHeight(middleFace, fullDigitHeight)
-        val sideSize = sizeForDigitHeight(sideFace, fullDigitHeight * TrioSpec.SIDE_RATIO)
+        val midSize = sizeForDigitHeight(middleFace, fullDigitHeight * TrioSpec.MID_RATIO)
+        val sideSize = sizeForDigitHeight(sideValueFace, fullDigitHeight * TrioSpec.SIDE_RATIO)
         val pad = max(h * TrioSpec.PAD, TrioSpec.PAD_MIN_PX)
         val n = TrioSpec.NARROW
 
@@ -134,7 +140,7 @@ class TrioRenderer(context: Context) {
 
         val midW = measure(middleFace, midSize, mid, n)
         val avail = max((w - midW) / 2f - 2f * pad, 1f) // edge padding + gap to the middle value
-        val widest = max(measure(sideFace, sideSize, left, n), measure(sideFace, sideSize, right, n))
+        val widest = max(measure(sideValueFace, sideSize, left, n), measure(sideValueFace, sideSize, right, n))
         val scale = avail / widest
         return when {
             scale >= 1f -> Plan(mid, midSize, left, right, sideSize, n)

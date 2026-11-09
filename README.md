@@ -8,8 +8,8 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 | **Power Trio** | average power (`AVG`) | 3 s power | left/right balance (`L/R`) |
 | **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate | cadence (`CAD`) |
 
-* Middle value: Avenir-style **bold italic**, digits as tall as the field (minus a 2 % margin top/bottom).
-* Left / right values: **regular italic**, digits exactly **2/3** of the middle digit height, with a small caption underneath.
+* Middle value: Avenir-style **bold italic**, digits 90 % of the full digit height (`TrioSpec.MID_RATIO`; the full height is the field minus a 2 % margin top/bottom).
+* Left / right values: **bold italic** (same face as the middle), digits **2/3** of the full digit height (`TrioSpec.SIDE_RATIO`, not affected by the 90 % middle), with a small regular-italic caption underneath.
 * No header row, so the numbers get the whole field height.
 * Speed Trio: average speed and distance show 2 decimals, current speed 1. Units and captions follow the
   rider's Karoo profile (mph + mi, or km/h + km).
@@ -28,8 +28,8 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 All text is horizontally condensed to 80 % of its natural width (`TrioSpec.NARROW`); heights are unchanged.
 
 The middle value never shrinks and always keeps one decimal. Left and right values keep two decimals and stay
-at the full 2/3 height only up to a field height of about **77 px** on a 480 px wide screen. Taller than that they
-shrink together (down to 45 % of their 2/3 height, about **117 px**), and below that they are squeezed
+at the full 2/3 height only up to a field height of about **71 px** on a 480 px wide screen. Taller than that they
+shrink together (down to 45 % of their 2/3 height, about **112 px**), and below that they are squeezed
 horizontally so everything still fits. The unit captions keep one fixed size (13 % of field height) and sit
 centred under their value.
 

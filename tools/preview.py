@@ -13,7 +13,8 @@ FONTS = os.path.join(HERE, "..", "app", "src", "main", "assets", "fonts")
 
 # --- TrioSpec (keep in sync with TrioRenderer.kt) ---------------------------------------
 MARGIN = 0.02
-SIDE_RATIO = 2 / 3
+MID_RATIO = 0.9         # middle digit height / full digit height (10 % smaller)
+SIDE_RATIO = 2 / 3      # side digit height / full digit height (unchanged by MID_RATIO)
 NARROW = 0.8            # all text horizontally condensed to 80 % width
 LABEL_RATIO = 0.13      # caption height / field height
 LABEL_GAP = 0.05        # gap between value and caption / field height
@@ -38,7 +39,8 @@ def face(*names):
 
 
 MID_PATH = face("avenir-bold-oblique.ttf", "nunitosans-bolditalic.ttf")
-SIDE_PATH = face("avenir-oblique.ttf", "nunitosans-italic.ttf")
+SIDE_PATH = face("avenir-oblique.ttf", "nunitosans-italic.ttf")   # captions
+VAL_PATH = MID_PATH                                                # left/right values are bold italic too
 
 
 def font(path, size):
@@ -62,11 +64,11 @@ def width_of(path, size, text, squeeze):
 def plan(w, h, content, k):
     left, mid, right = content
     full = h * (1 - 2 * MARGIN)
-    mid_size = size_for_digit_height(MID_PATH, full)
-    side_size = size_for_digit_height(SIDE_PATH, full * SIDE_RATIO)
+    mid_size = size_for_digit_height(MID_PATH, full * MID_RATIO)
+    side_size = size_for_digit_height(VAL_PATH, full * SIDE_RATIO)
     pad = max(h * PAD, PAD_MIN_PX * k)
     avail = max((w - width_of(MID_PATH, mid_size, mid, NARROW)) / 2 - 2 * pad, 1)
-    widest = max(width_of(SIDE_PATH, side_size, left, NARROW), width_of(SIDE_PATH, side_size, right, NARROW))
+    widest = max(width_of(VAL_PATH, side_size, left, NARROW), width_of(VAL_PATH, side_size, right, NARROW))
     scale = avail / widest
     if scale >= 1:
         size, squeeze, eff = side_size, NARROW, 1.0
@@ -103,7 +105,7 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
     put(p["mid"], MID_PATH, p["mid_size"], (W - mw) / 2, H / 2, NARROW, fg)
 
     # left / right: value + caption underneath, pair centred vertically
-    t, b = digit_bounds(SIDE_PATH, p["side_size"])
+    t, b = digit_bounds(VAL_PATH, p["side_size"])
     side_h = b - t
     label_h = H * LABEL_RATIO
     gap = H * LABEL_GAP
@@ -112,11 +114,11 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
     label_cy = top + side_h + gap + label_h / 2
     label_size = size_for_digit_height(SIDE_PATH, label_h)
 
-    lw = width_of(SIDE_PATH, p["side_size"], p["left"], p["side_squeeze"])
-    rw = width_of(SIDE_PATH, p["side_size"], p["right"], p["side_squeeze"])
+    lw = width_of(VAL_PATH, p["side_size"], p["left"], p["side_squeeze"])
+    rw = width_of(VAL_PATH, p["side_size"], p["right"], p["side_squeeze"])
     lx, rx = p["pad"], W - p["pad"] - rw
-    put(p["left"], SIDE_PATH, p["side_size"], lx, value_cy, p["side_squeeze"], fg)
-    put(p["right"], SIDE_PATH, p["side_size"], rx, value_cy, p["side_squeeze"], fg)
+    put(p["left"], VAL_PATH, p["side_size"], lx, value_cy, p["side_squeeze"], fg)
+    put(p["right"], VAL_PATH, p["side_size"], rx, value_cy, p["side_squeeze"], fg)
 
     def label(text, cx):
         w_ = width_of(SIDE_PATH, label_size, text, NARROW)
