@@ -14,7 +14,7 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
 
-/** Small green symbol drawn before a caption. */
+/** Small orange symbol drawn before a caption. */
 enum class TrioIcon { SPEEDOMETER, BOLT, HEART, CHAINRING, CRANK }
 
 /** Ready-to-draw text for the three slots plus the small captions (and optional icons) under each value. */
@@ -302,11 +302,11 @@ class TrioRenderer(context: Context) {
 }
 
 /**
- * Caption icons, all green, drawn from simple shapes in a 24 x 24 box scaled to the requested size.
+ * Caption icons, all Oklahoma State orange, drawn from simple shapes in a 24 x 24 box scaled to the requested size.
  * tools/preview.py draws the same shapes with the same numbers.
  */
 private object TrioIcons {
-    private val GREEN = Color.parseColor("#22B455")
+    private val ICON_ORANGE = Color.parseColor("#FE5C00") // Oklahoma State orange
 
     fun draw(canvas: Canvas, paint: Paint, icon: TrioIcon, cx: Float, cy: Float, size: Float) {
         val s = size / 24f
@@ -315,7 +315,7 @@ private object TrioIcons {
         fun x(v: Float) = ox + v * s
         fun y(v: Float) = oy + v * s
 
-        paint.color = GREEN
+        paint.color = ICON_ORANGE
 
         fun dot(a: Float, b: Float, r: Float) {
             paint.style = Paint.Style.FILL

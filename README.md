@@ -10,7 +10,7 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 
 * Middle value: Avenir-style **bold italic**, scaled so a caption fits under it at the same size as the side captions, then made another 10 % smaller (`TrioSpec.MID_PAIR_MARGIN`, `MID_SCALE`: digits come out at about 63 % of the field height). All three values share one baseline and one caption row.
 * Left / right values: **bold italic** (same face as the middle), nominally 10 % larger than before (`TrioSpec.SIDE_RATIO` = 2/3 x 1.1 of the full digit height) but never taller than the middle digits. On a normal field height the available width, not this ratio, sets their size.
-* Captions are **bold italic**, each with a small **green symbol** before the text (`TrioIcon`, drawn from vector shapes in `TrioIcons`): speedometer for all three Speed Trio captions, lightning bolt for all three Power Trio captions (AVG, 3SEC, L/R), chainring for GEAR, heart for BPM, crank for CAD.
+* Captions are **bold italic**, each with a small **orange symbol** (Oklahoma State orange, `#FE5C00`) before the text (`TrioIcon`, drawn from vector shapes in `TrioIcons`): speedometer for all three Speed Trio captions, lightning bolt for all three Power Trio captions (AVG, 3SEC, L/R), chainring for GEAR, heart for BPM, crank for CAD.
 * No header row, so the numbers get the whole field height.
 * Two slanted separator lines (leaning 9 degrees like the italics, 50 % of the field height, centred top to bottom, medium gray) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).
 * Speed Trio: average speed and distance show 2 decimals, current speed 1. Units and captions follow the
