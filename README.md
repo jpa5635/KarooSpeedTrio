@@ -8,14 +8,15 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 | **Power Trio** | average power (`AVG`) | 3 s power (`3SEC`) | left/right balance (`L/R`) |
 | **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate (`BPM`) | cadence (`CAD`) |
 
-* Middle value: Avenir-style **bold italic**, scaled so a small caption fits under it at the same size as the side captions (`TrioSpec.MID_PAIR_MARGIN`: digits come out at 70 % of the field height). All three values share one baseline and one caption row.
-* Left / right values: **bold italic** (same face as the middle), digits **2/3** of the full digit height (`TrioSpec.SIDE_RATIO`, not affected by the 90 % middle), with a small regular-italic caption underneath.
+* Middle value: Avenir-style **bold italic**, scaled so a caption fits under it at the same size as the side captions, then made another 10 % smaller (`TrioSpec.MID_PAIR_MARGIN`, `MID_SCALE`: digits come out at about 63 % of the field height). All three values share one baseline and one caption row.
+* Left / right values: **bold italic** (same face as the middle), nominally 10 % larger than before (`TrioSpec.SIDE_RATIO` = 2/3 x 1.1 of the full digit height) but never taller than the middle digits. On a normal field height the available width, not this ratio, sets their size.
+* Captions are **bold italic**, each with a small **green symbol** before the text (`TrioIcon`, drawn from vector shapes in `TrioIcons`): speedometer for all three Speed Trio captions, lightning bolt for all three Power Trio captions (AVG, 3SEC, L/R), chainring for GEAR, heart for BPM, crank for CAD.
 * No header row, so the numbers get the whole field height.
-* Two slanted separator lines (leaning 9 degrees like the italics, 75 % of the field height, centred top to bottom) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).
+* Two slanted separator lines (leaning 9 degrees like the italics, 50 % of the field height, centred top to bottom, medium gray) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).
 * Speed Trio: average speed and distance show 2 decimals, current speed 1. Units and captions follow the
   rider's Karoo profile (mph + mi, or km/h + km).
-* Power Trio: whole watts; balance is `left/right` percent (e.g. `49/51`) using the live power balance stream.
-  `PowerTrioDataType.kt` shows where to swap in the 3 s or ride-average balance.
+* Power Trio: whole watts; balance is the **3 second average** `left/right` percent (e.g. `49/51`).
+  `PowerTrioDataType.kt` shows where to swap in the instantaneous or ride-average balance.
 * Speed Trio also shows a **flashing red dot in the upper-left corner while any camera is recording**
   (1 s on / 1 s off, the fastest a Karoo view can update). It subscribes to the Insta360 extension's
   `recording_state` stream (`insta360cam::recording_state`, 1 while ANY saved camera is recording), so nothing
@@ -28,11 +29,11 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 
 All text is horizontally condensed to 80 % of its natural width (`TrioSpec.NARROW`); heights are unchanged.
 
-The middle value never shrinks and always keeps one decimal. Left and right values keep two decimals and stay
-at the full 2/3 height only up to a field height of about **73 px** on a 480 px wide screen. Taller than that they
-shrink together (down to 45 % of their 2/3 height, about **118 px**), and below that they are squeezed
-horizontally so everything still fits. The unit captions keep one fixed size (13 % of field height) and sit
-centred under their value.
+The middle value never shrinks and always keeps one decimal. Left and right values keep two decimals; they take their
+nominal size only on short fields. At normal heights (about 110 px on a 480 px wide screen) they shrink together to fit
+the width beside the middle value (down to 45 % of nominal), and below that they are squeezed horizontally so
+everything still fits. The captions keep one fixed size (13 % of field height) and sit centred under their value, icon
+first.
 
 All numbers live in `TrioSpec` in `TrioRenderer.kt`.
 
@@ -41,10 +42,9 @@ All numbers live in `TrioSpec` in `TrioRenderer.kt`.
 Avenir is a licensed font, so it is not bundled. The extension looks for these files in
 `app/src/main/assets/fonts/` and uses them if present:
 
-* `avenir-bold-oblique.ttf` (middle value, e.g. Avenir Heavy Oblique / Bold Oblique)
-* `avenir-oblique.ttf` (side values, e.g. Avenir Book Oblique / Roman Oblique)
+* `avenir-bold-oblique.ttf` (all numbers and captions, e.g. Avenir Heavy Oblique / Bold Oblique)
 
-If they are missing it falls back to the bundled **Nunito Sans** Italic / Bold Italic (SIL OFL,
+If they are missing it falls back to the bundled **Nunito Sans** Bold Italic (SIL OFL,
 see `NunitoSans-OFL.txt`), a free geometric sans with Avenir-like proportions.
 
 ## Installing

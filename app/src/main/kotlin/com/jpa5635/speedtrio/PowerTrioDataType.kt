@@ -8,20 +8,24 @@ import kotlin.math.roundToInt
 
 /**
  * Double-width field: [average power] [3 s power] [left/right balance].
- * Power in whole watts; balance as "left/right" percent, e.g. 49/51.
+ * Power in whole watts; balance is the 3 second average, as "left/right" percent, e.g. 49/51.
  */
 class PowerTrioDataType(
     karooSystem: KarooSystemService,
     extension: String,
 ) : TrioDataType(karooSystem, extension, "power-trio") {
 
-    override val previewContent = TrioContent("152", "238", "49/51", "AVG", "L/R", "3SEC")
+    override val previewContent = TrioContent(
+        "152", "238", "49/51", "AVG", "L/R", "3SEC",
+        leftIcon = TrioIcon.BOLT, middleIcon = TrioIcon.BOLT, rightIcon = TrioIcon.BOLT,
+    )
 
     override fun contentFlow(): Flow<TrioContent> = combine(
         valueFlow(DataType.Type.AVERAGE_POWER),
         valueFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER),
-        // Swap in AVERAGE_PEDAL_POWER_BALANCE or SMOOTHED_3S_AVERAGE_PEDAL_POWER_BALANCE for a calmer number.
-        valueFlow(DataType.Type.PEDAL_POWER_BALANCE, DataType.Field.PEDAL_POWER_BALANCE_LEFT),
+        // 3 second average balance (same stream the Karoo's own 3s balance field uses). Swap in PEDAL_POWER_BALANCE for
+        // the instantaneous value or AVERAGE_PEDAL_POWER_BALANCE for the ride average.
+        valueFlow(DataType.Type.SMOOTHED_3S_AVERAGE_PEDAL_POWER_BALANCE, DataType.Field.PEDAL_POWER_BALANCE_LEFT),
     ) { avg, power3s, balanceLeft ->
         TrioContent(
             left = text(avg, 0),
@@ -30,6 +34,9 @@ class PowerTrioDataType(
             leftLabel = "AVG",
             rightLabel = "L/R",
             middleLabel = "3SEC",
+            leftIcon = TrioIcon.BOLT,
+            middleIcon = TrioIcon.BOLT,
+            rightIcon = TrioIcon.BOLT,
         )
     }
 
