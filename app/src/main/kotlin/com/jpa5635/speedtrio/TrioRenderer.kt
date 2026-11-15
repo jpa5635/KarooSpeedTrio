@@ -43,10 +43,11 @@ object TrioSpec {
     const val MID_PAIR_MARGIN = 0.06f
 
     /**
-     * Left/right digit height relative to the full digit height: 2/3 x 1.1 (10 % larger than before). Never taller
-     * than the middle digits; on normal field heights the width available is what limits them.
+     * Left/right digit height as a fraction of the field height. FIXED: it never changes with the numbers shown.
+     * (Before, the sides shrank to fit the text, so they sat around 0.39-0.42 of the field height and jumped
+     * larger whenever the middle number got shorter. 0.46 is 10 % or more above that.)
      */
-    const val SIDE_RATIO = 2f / 3f * 1.1f
+    const val SIDE_DIGIT = 0.46f
 
     /** The middle digits are this fraction of the height left over after the caption row and margins (10 % smaller). */
     const val MID_SCALE = 0.9f
@@ -87,12 +88,6 @@ object TrioSpec {
     /** Clear space reserved between a side value and the middle value for the separator (fraction of height, floor in px). */
     const val SEP_GAP = 0.15f
     const val SEP_GAP_MIN_PX = 12f
-
-    /**
-     * When the left/right values do not fit the width next to the middle value, their size shrinks
-     * (never below this fraction of the 2/3 height), then they are squeezed. The middle value never shrinks.
-     */
-    const val SIDE_MIN_SCALE = 0.45f
 }
 
 object TrioTheme {
@@ -113,18 +108,27 @@ class TrioRenderer(context: Context) {
     private val labelFace = middleFace
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
 
-    private class Plan(val mid: String, val midSize: Float, val left: String, val right: String, val sideSize: Float, val sideSqueeze: Float)
-
-    fun render(width: Int, height: Int, v: TrioContent, dark: Boolean, recordingDot: Boolean = false): Bitmap {
+    /**
+     * Draws the field. Every size and position here comes from the field size alone, never from the live text,
+     * so nothing jumps around when a value gets shorter or longer. [middleSizing] is the widest text the middle slot
+     * normally shows (e.g. "888"); it only sets how much room the middle slot reserves. A value that is still wider
+     * than its slot is squeezed horizontally (font size unchanged).
+     */
+    fun render(
+        width: Int, height: Int, v: TrioContent, dark: Boolean, recordingDot: Boolean = false,
+        middleSizing: String = v.middle,
+    ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val main = if (dark) Color.WHITE else Color.parseColor("#111111")
         val dim = if (dark) Color.parseColor("#B8BEC6") else Color.parseColor("#4A5058")
 
         val h = height.toFloat()
-        val plan = plan(width.toFloat(), h, v)
+        val w = width.toFloat()
         val pad = max(h * TrioSpec.PAD, TrioSpec.PAD_MIN_PX)
         val n = TrioSpec.NARROW
+        val midSize = sizeForDigitHeight(middleFace, midDigitHeight(h))
+        val sideSize = sizeForDigitHeight(sideValueFace, h * TrioSpec.SIDE_DIGIT)
 
         // Rows shared by all three values: the middle value + its caption are centred vertically (with
         // MID_PAIR_MARGIN above and below); the side values sit on the same baseline with their captions on
@@ -140,31 +144,38 @@ class TrioRenderer(context: Context) {
         val iconSize = labelH * TrioSpec.ICON_RATIO
         val iconGap = h * TrioSpec.ICON_GAP
 
-        // Middle value, centred horizontally in the field, with its caption underneath.
+        // Fixed slots. The middle slot is as wide as its sizing text; the side slots are what is left. The separator
+        // sits in the middle of the gap next to the middle slot; side values are centred between the field edge
+        // and their separator.
+        val sepGap = gapToMid(h, pad)
+        val midSlotW = measure(middleFace, midSize, middleSizing, n)
+        val midLeft = (w - midSlotW) / 2f
+        val midRight = midLeft + midSlotW
+        val sepLeft = midLeft - sepGap / 2f
+        val sepRight = midRight + sepGap / 2f
+        val sideSlotW = max(midLeft - sepGap - pad, 1f)
+        val leftCx = sepLeft / 2f
+        val rightCx = (sepRight + w) / 2f
+
+        // Font sizes stay fixed; only a value wider than its slot is squeezed.
+        val midSq = fitSqueeze(middleFace, midSize, v.middle, midSlotW)
+        val leftSq = fitSqueeze(sideValueFace, sideSize, v.left, sideSlotW)
+        val rightSq = fitSqueeze(sideValueFace, sideSize, v.right, sideSlotW)
+        val midW = measure(middleFace, midSize, v.middle, midSq)
+        val leftW = measure(sideValueFace, sideSize, v.left, leftSq)
+        val rightW = measure(sideValueFace, sideSize, v.right, rightSq)
+
+        // Middle value, centred in the field, with its caption underneath.
         paint.color = main
-        val midW = measure(middleFace, plan.midSize, plan.mid, n)
-        draw(canvas, plan.mid, middleFace, plan.midSize, n, (width - midW) / 2f, midCy)
+        draw(canvas, v.middle, middleFace, midSize, midSq, (w - midW) / 2f, midCy)
 
         // Left / right values: same baseline as the middle value.
-        val sideDigitH = digitBounds(sideValueFace, plan.sideSize, 1f).height().toFloat()
+        val sideDigitH = digitBounds(sideValueFace, sideSize, 1f).height().toFloat()
         val valueCy = baseline - sideDigitH / 2f
-
-        val leftW = measure(sideValueFace, plan.sideSize, plan.left, plan.sideSqueeze)
-        val rightW = measure(sideValueFace, plan.sideSize, plan.right, plan.sideSqueeze)
-
-        // Each side value is centred in the space between the field edge and its separator. The separator
-        // sits in the middle of the gap next to the middle value.
-        val midLeft = (width - midW) / 2f
-        val midRight = midLeft + midW
-        val gapToMid = gapToMid(h, pad)
-        val sepLeft = midLeft - gapToMid / 2f
-        val sepRight = midRight + gapToMid / 2f
-        val leftX = (sepLeft / 2f - leftW / 2f).coerceAtLeast(pad)
-        val rightX = ((sepRight + width) / 2f - rightW / 2f).coerceAtMost(width - pad - rightW)
-
-        paint.color = main
-        draw(canvas, plan.left, sideValueFace, plan.sideSize, plan.sideSqueeze, leftX, valueCy)
-        draw(canvas, plan.right, sideValueFace, plan.sideSize, plan.sideSqueeze, rightX, valueCy)
+        val leftX = (leftCx - leftW / 2f).coerceAtLeast(pad)
+        val rightX = (rightCx - rightW / 2f).coerceAtMost(w - pad - rightW)
+        draw(canvas, v.left, sideValueFace, sideSize, leftSq, leftX, valueCy)
+        draw(canvas, v.right, sideValueFace, sideSize, rightSq, rightX, valueCy)
 
         if (TrioSpec.SEPARATORS) {
             paint.color = SEPARATOR_GRAY
@@ -174,10 +185,10 @@ class TrioRenderer(context: Context) {
 
         paint.color = dim
         if (v.middleLabel.isNotEmpty()) {
-            drawLabel(canvas, v.middleLabel, v.middleIcon, labelSize, iconSize, iconGap, width / 2f, labelCy, pad, width - pad)
+            drawLabel(canvas, v.middleLabel, v.middleIcon, labelSize, iconSize, iconGap, w / 2f, labelCy, pad, w - pad)
         }
-        drawLabel(canvas, v.leftLabel, v.leftIcon, labelSize, iconSize, iconGap, leftX + leftW / 2f, labelCy, pad, width - pad)
-        drawLabel(canvas, v.rightLabel, v.rightIcon, labelSize, iconSize, iconGap, rightX + rightW / 2f, labelCy, pad, width - pad)
+        drawLabel(canvas, v.leftLabel, v.leftIcon, labelSize, iconSize, iconGap, leftCx, labelCy, pad, w - pad)
+        drawLabel(canvas, v.rightLabel, v.rightIcon, labelSize, iconSize, iconGap, rightCx, labelCy, pad, w - pad)
 
         if (recordingDot) {
             val r = minOf(h * TrioSpec.DOT_RADIUS, TrioSpec.DOT_MAX_RADIUS_PX)
@@ -225,28 +236,10 @@ class TrioRenderer(context: Context) {
     private fun gapToMid(h: Float, pad: Float): Float =
         if (TrioSpec.SEPARATORS) max(h * TrioSpec.SEP_GAP, TrioSpec.SEP_GAP_MIN_PX) else pad
 
-    private fun plan(w: Float, h: Float, v: TrioContent): Plan {
-        val fullDigitHeight = h * (1f - 2f * TrioSpec.MARGIN)
-        val midSize = sizeForDigitHeight(middleFace, midDigitHeight(h))
-        val sideSize = sizeForDigitHeight(sideValueFace, minOf(fullDigitHeight * TrioSpec.SIDE_RATIO, midDigitHeight(h)))
-        val pad = max(h * TrioSpec.PAD, TrioSpec.PAD_MIN_PX)
-        val n = TrioSpec.NARROW
-
-        val mid = v.middle
-        val left = v.left
-        val right = v.right
-
-        val midW = measure(middleFace, midSize, mid, n)
-        // edge padding + gap to the middle value (room for the separator when enabled)
-        val avail = max((w - midW) / 2f - pad - gapToMid(h, pad), 1f)
-        val widest = max(measure(sideValueFace, sideSize, left, n), measure(sideValueFace, sideSize, right, n))
-        val scale = avail / widest
-        return when {
-            scale >= 1f -> Plan(mid, midSize, left, right, sideSize, n)
-            scale >= TrioSpec.SIDE_MIN_SCALE -> Plan(mid, midSize, left, right, sideSize * scale, n)
-            // Very short/narrow field: smallest size, squeezed horizontally to fit.
-            else -> Plan(mid, midSize, left, right, sideSize * TrioSpec.SIDE_MIN_SCALE, n * scale / TrioSpec.SIDE_MIN_SCALE)
-        }
+    /** Horizontal scale that makes [text] fit [maxW]: the normal condensing, or less if the text is still too wide. */
+    private fun fitSqueeze(face: Typeface, size: Float, text: String, maxW: Float): Float {
+        val natural = measure(face, size, text, TrioSpec.NARROW)
+        return if (natural <= maxW) TrioSpec.NARROW else TrioSpec.NARROW * maxW / natural
     }
 
     /** Text size at which the digits 0-9 are exactly [target] px tall (works for any font). */

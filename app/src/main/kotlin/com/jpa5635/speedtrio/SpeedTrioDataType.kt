@@ -19,6 +19,8 @@ class SpeedTrioDataType(
     extension: String,
 ) : TrioDataType(karooSystem, extension, "speed-trio") {
 
+    override val middleSizing = "88.8"
+
     override val previewContent = TrioContent(
         "17.24", "28.3", "42.63", "MPH", "MI", "MPH",
         leftIcon = TrioIcon.SPEEDOMETER, middleIcon = TrioIcon.SPEEDOMETER, rightIcon = TrioIcon.SPEEDOMETER,

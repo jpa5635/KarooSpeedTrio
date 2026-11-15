@@ -15,6 +15,8 @@ class PowerTrioDataType(
     extension: String,
 ) : TrioDataType(karooSystem, extension, "power-trio") {
 
+    override val middleSizing = "888"
+
     override val previewContent = TrioContent(
         "152", "238", "49/51", "AVG", "L/R", "3SEC",
         leftIcon = TrioIcon.BOLT, middleIcon = TrioIcon.BOLT, rightIcon = TrioIcon.BOLT,

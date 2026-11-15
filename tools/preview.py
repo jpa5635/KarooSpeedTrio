@@ -15,7 +15,7 @@ FONTS = os.path.join(HERE, "..", "app", "src", "main", "assets", "fonts")
 # --- TrioSpec (keep in sync with TrioRenderer.kt) ---------------------------------------
 MARGIN = 0.02
 MID_PAIR_MARGIN = 0.06  # free space above the middle digits / below the middle caption (fraction of field height)
-SIDE_RATIO = 2 / 3 * 1.1  # side digit height / full digit height (10 % larger than before; capped at the middle digit height)
+SIDE_DIGIT = 0.46       # side digit height / field height. FIXED (before: 0.39-0.42, shrinking with the text)
 MID_SCALE = 0.9         # middle digits are 10 % smaller than what is left after the caption row and margins
 ICON_RATIO = 1.25       # caption icon box size / caption height
 ICON_GAP = 0.04         # gap between caption icon and caption text / field height
@@ -36,7 +36,6 @@ SEP_GAP = 0.15          # clear space between a side value and the middle value 
 SEP_GAP_MIN_PX = 12.0
 PAD = 0.05
 PAD_MIN_PX = 6.0
-SIDE_MIN_SCALE = 0.45   # sides shrink down to this fraction of their 2/3 height, then get squeezed
 # -----------------------------------------------------------------------------------------
 
 DIGITS = "0123456789"
@@ -142,34 +141,37 @@ def mid_digit_height(h):
     return MID_SCALE * h * (1 - 2 * MID_PAIR_MARGIN - LABEL_GAP - LABEL_RATIO)
 
 
-def plan(w, h, content, k):
+def fit_squeeze(path, size, text, max_w):
+    """Normal condensing, or less if the text is still wider than its slot (font size never changes)."""
+    natural = width_of(path, size, text, NARROW)
+    return NARROW if natural <= max_w else NARROW * max_w / natural
+
+
+def plan(w, h, content, k, mid_sizing):
+    """Everything here depends only on the field size, never on the live text (except per-value squeezing)."""
     left, mid, right = content
-    full = h * (1 - 2 * MARGIN)
     mid_size = size_for_digit_height(MID_PATH, mid_digit_height(h))
-    side_size = size_for_digit_height(VAL_PATH, min(full * SIDE_RATIO, mid_digit_height(h)))
+    side_size = size_for_digit_height(VAL_PATH, h * SIDE_DIGIT)
     pad = max(h * PAD, PAD_MIN_PX * k)
     gap_to_mid = max(h * SEP_GAP, SEP_GAP_MIN_PX * k) if SEPARATORS else pad
-    avail = max((w - width_of(MID_PATH, mid_size, mid, NARROW)) / 2 - pad - gap_to_mid, 1)
-    widest = max(width_of(VAL_PATH, side_size, left, NARROW), width_of(VAL_PATH, side_size, right, NARROW))
-    scale = avail / widest
-    if scale >= 1:
-        size, squeeze, eff = side_size, NARROW, 1.0
-    elif scale >= SIDE_MIN_SCALE:
-        size, squeeze, eff = side_size * scale, NARROW, scale
-    else:
-        size, squeeze, eff = side_size * SIDE_MIN_SCALE, NARROW * scale / SIDE_MIN_SCALE, SIDE_MIN_SCALE
-    return dict(mid=mid, mid_size=mid_size, left=left, right=right, side_size=size, side_squeeze=squeeze, pad=pad,
-                note=f"values at {eff*(2/3)*100:.0f}% of field height")
+    mid_slot_w = width_of(MID_PATH, mid_size, mid_sizing, NARROW)
+    mid_left = (w - mid_slot_w) / 2
+    side_slot_w = max(mid_left - gap_to_mid - pad, 1)
+    return dict(mid=mid, left=left, right=right, mid_size=mid_size, side_size=side_size, pad=pad,
+                gap=gap_to_mid, mid_slot_w=mid_slot_w, side_slot_w=side_slot_w,
+                mid_sq=fit_squeeze(MID_PATH, mid_size, mid, mid_slot_w),
+                left_sq=fit_squeeze(VAL_PATH, side_size, left, side_slot_w),
+                right_sq=fit_squeeze(VAL_PATH, side_size, right, side_slot_w))
 
 
-def render_field(w, h, content, labels, dark, k=1, dot=False):
+def render_field(w, h, content, labels, dark, k=1, dot=False, mid_sizing=None):
     """w, h in device px; k = supersampling factor for a crisper preview."""
     W, H = w * k, h * k
     bg = (0, 0, 0, 255) if dark else (255, 255, 255, 255)
     fg = (255, 255, 255, 255) if dark else (17, 17, 17, 255)
     dim = (184, 190, 198, 255) if dark else (74, 80, 88, 255)
     img = Image.new("RGBA", (W, H), bg)
-    p = plan(W, H, content, k)
+    p = plan(W, H, content, k, mid_sizing or content[1])
 
     def put(text, path, size, x, cy, squeeze, color):
         """Draw text horizontally scaled by `squeeze` (like Paint.textScaleX), digits centred on cy."""
@@ -195,24 +197,26 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
     icon_size = label_h * ICON_RATIO
     icon_gap = H * ICON_GAP
 
-    mw = width_of(MID_PATH, p["mid_size"], p["mid"], NARROW)
-    put(p["mid"], MID_PATH, p["mid_size"], (W - mw) / 2, mid_cy, NARROW, fg)
+    mw = width_of(MID_PATH, p["mid_size"], p["mid"], p["mid_sq"])
+    put(p["mid"], MID_PATH, p["mid_size"], (W - mw) / 2, mid_cy, p["mid_sq"], fg)
 
     t, b = digit_bounds(VAL_PATH, p["side_size"])
     side_h = b - t
     value_cy = baseline - side_h / 2
 
-    lw = width_of(VAL_PATH, p["side_size"], p["left"], p["side_squeeze"])
-    rw = width_of(VAL_PATH, p["side_size"], p["right"], p["side_squeeze"])
-    # side values are centred between the field edge and their separator, which sits mid-gap beside the middle value
-    mid_left = (W - mw) / 2
-    mid_right = mid_left + mw
-    gap = max(H * SEP_GAP, SEP_GAP_MIN_PX * k) if SEPARATORS else p["pad"]
+    lw = width_of(VAL_PATH, p["side_size"], p["left"], p["left_sq"])
+    rw = width_of(VAL_PATH, p["side_size"], p["right"], p["right_sq"])
+    # fixed slots: separators sit mid-gap beside the middle slot; side values are centred between the field edge and
+    # their separator
+    mid_left = (W - p["mid_slot_w"]) / 2
+    mid_right = mid_left + p["mid_slot_w"]
+    gap = p["gap"]
     sep_l, sep_r = mid_left - gap / 2, mid_right + gap / 2
-    lx = max(sep_l / 2 - lw / 2, p["pad"])
-    rx = min((sep_r + W) / 2 - rw / 2, W - p["pad"] - rw)
-    put(p["left"], VAL_PATH, p["side_size"], lx, value_cy, p["side_squeeze"], fg)
-    put(p["right"], VAL_PATH, p["side_size"], rx, value_cy, p["side_squeeze"], fg)
+    left_cx, right_cx = sep_l / 2, (sep_r + W) / 2
+    lx = max(left_cx - lw / 2, p["pad"])
+    rx = min(right_cx - rw / 2, W - p["pad"] - rw)
+    put(p["left"], VAL_PATH, p["side_size"], lx, value_cy, p["left_sq"], fg)
+    put(p["right"], VAL_PATH, p["side_size"], rx, value_cy, p["right_sq"], fg)
 
     if SEPARATORS:
         L = H * SEP_HEIGHT
@@ -236,8 +240,8 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
             draw_icon(img, icon, x + icon_size / 2, label_cy, icon_size)
         put(text, LABEL_PATH, label_size, x + iw, label_cy, NARROW, dim)
 
-    label(labels[0], lx + lw / 2)
-    label(labels[1], rx + rw / 2)
+    label(labels[0], left_cx)
+    label(labels[1], right_cx)
     if len(labels) > 2 and labels[2][0]:
         label(labels[2], W / 2)
 
@@ -248,7 +252,7 @@ def render_field(w, h, content, labels, dark, k=1, dot=False):
     return img, p
 
 
-def sheet(out, title, subtitle, cases):
+def sheet(out, title, subtitle, cases, mid_sizing=None):
     """cases: list of (w, h, dark, (left, mid, right), (left_label, right_label))."""
     k = 2
     label_f = ImageFont.truetype(face("nunitosans-italic.ttf"), 22)
@@ -263,10 +267,10 @@ def sheet(out, title, subtitle, cases):
     y = top
     for c in cases:
         (w, h, dark, content, labels), dot = c[:5], (c[5] if len(c) > 5 else False)
-        img, p = render_field(w, h, content, labels, dark, k, dot)
+        img, p = render_field(w, h, content, labels, dark, k, dot, mid_sizing)
         theme = "dark" if dark else "light"
         extra = ", recording dot on" if dot else ""
-        sd.text((margin, y), f"{w} x {h} px, {theme}  -  {' | '.join(content)}  ({p['note']}{extra})",
+        sd.text((margin, y), f"{w} x {h} px, {theme}  -  {' | '.join(content)}  (side digits fixed at {SIDE_DIGIT*100:.0f}% of height{extra})",
                 font=small_f, fill=(200, 206, 214))
         y += 30
         img_.alpha_composite(img, (margin, y))
@@ -282,26 +286,29 @@ def main(prefix):
         (480, 110, False, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
         (480, 140, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
         (480, 110, True, ("24.91", "36.8", "142.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
+        (480, 110, True, ("0.00", "0.0", "0.00"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
         (480, 72, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
     ]
     power = [
         (480, 110, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
         (480, 110, False, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
         (480, 140, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("152", "0", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("--", "--", "--"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
         (480, 110, True, ("187", "1043", "52/48"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
     ]
     gear = [
         (480, 110, True, ("48-13", "152", "92"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
         (480, 110, False, ("48-13", "152", "92"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
         (480, 140, True, ("48-13", "152", "92"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
-        (480, 110, True, ("34-11", "191", "104"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
+        (480, 110, True, ("34-11", "91", "0"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
     ]
     sheet(prefix + "_gear.png", "Gear Trio  -  gear | heart rate | cadence",
-          "Layout rules identical to the extension", gear)
+          "Layout rules identical to the extension", gear, "888")
     sheet(prefix + "_speed.png", "Speed Trio  -  avg speed | current speed | ride distance",
-          "Imperial units; red dot flashes in the upper-left while any camera records (shown in its on phase)", speed)
+          "Imperial units; red dot flashes in the upper-left while any camera records (shown in its on phase)", speed, "88.8")
     sheet(prefix + "_power.png", "Power Trio  -  avg power | 3 s power | left/right balance",
-          "Layout rules identical to the extension", power)
+          "Layout rules identical to the extension", power, "888")
 
 
 if __name__ == "__main__":

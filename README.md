@@ -9,7 +9,7 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 | **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate (`BPM`) | cadence (`CAD`) |
 
 * Middle value: Avenir-style **bold italic**, scaled so a caption fits under it at the same size as the side captions, then made another 10 % smaller (`TrioSpec.MID_PAIR_MARGIN`, `MID_SCALE`: digits come out at about 63 % of the field height). All three values share one baseline and one caption row.
-* Left / right values: **bold italic** (same face as the middle), nominally 10 % larger than before (`TrioSpec.SIDE_RATIO` = 2/3 x 1.1 of the full digit height) but never taller than the middle digits. On a normal field height the available width, not this ratio, sets their size.
+* Left / right values: **bold italic** (same face as the middle), digits **fixed at 46 % of the field height** (`TrioSpec.SIDE_DIGIT`), about 10-18 % larger than the 39-42 % they used to settle at.
 * Captions are **bold italic**, each with a small **orange symbol** (Oklahoma State orange, `#FE5C00`) before the text (`TrioIcon`, drawn from vector shapes in `TrioIcons`): speedometer for all three Speed Trio captions, lightning bolt for all three Power Trio captions (AVG, 3SEC, L/R), chainring for GEAR, heart for BPM, crank for CAD.
 * No header row, so the numbers get the whole field height.
 * Two slanted separator lines (leaning 9 degrees like the italics, 50 % of the field height, centred top to bottom, medium gray) sit between the values. They are experimental: `TrioSpec.SEPARATORS = false` removes them (and gives the space back to the side values).
@@ -29,11 +29,14 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 
 All text is horizontally condensed to 80 % of its natural width (`TrioSpec.NARROW`); heights are unchanged.
 
-The middle value never shrinks and always keeps one decimal. Left and right values keep two decimals; they take their
-nominal size only on short fields. At normal heights (about 110 px on a 480 px wide screen) they shrink together to fit
-the width beside the middle value (down to 45 % of nominal), and below that they are squeezed horizontally so
-everything still fits. The captions keep one fixed size (13 % of field height) and sit centred under their value, icon
-first.
+**Sizes are fixed.** Font sizes, slot widths, separator positions and caption positions are worked out from the field
+size alone, never from the live numbers, so nothing resizes when a value gets shorter or longer (for example 3 s
+power dropping to `0`). Each Trio names the widest text its middle slot normally shows (`middleSizing`, `"88.8"` for
+speed, `"888"` for power and gear); that sets the middle slot's width and the separator positions, and the side slots
+are what is left. A value that is still wider than its slot (say `1043` W, or `142.63` mi) keeps its font size and is
+squeezed horizontally just enough to fit. The captions keep one fixed size (13 % of field height) and sit centred
+under their slot, icon first. Taller fields scale everything with the height, so the side numbers get squeezed a
+little more there.
 
 All numbers live in `TrioSpec` in `TrioRenderer.kt`.
 

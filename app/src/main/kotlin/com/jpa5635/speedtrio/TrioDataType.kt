@@ -36,6 +36,12 @@ abstract class TrioDataType(
     /** Representative content shown while the page is being edited. */
     protected abstract val previewContent: TrioContent
 
+    /**
+     * Widest text the middle value normally shows, written with 8s (e.g. "888"). It sets how much room the middle
+     * slot reserves, so sizes and separators stay put however long the live number is.
+     */
+    protected abstract val middleSizing: String
+
     /** Live content; emits whenever any underlying value changes. */
     protected abstract fun contentFlow(): Flow<TrioContent>
 
@@ -52,7 +58,7 @@ abstract class TrioDataType(
         emitter.onNext(UpdateGraphicConfig(showHeader = false))
 
         fun push(content: TrioContent, dot: Boolean) {
-            val bitmap = renderer.render(width, height, content, dark, dot)
+            val bitmap = renderer.render(width, height, content, dark, dot, middleSizing)
             val views = RemoteViews(context.packageName, R.layout.speed_trio_view)
             views.setImageViewBitmap(R.id.trio_image, bitmap)
             emitter.updateView(views)
