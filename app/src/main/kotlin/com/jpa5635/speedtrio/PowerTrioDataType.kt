@@ -18,7 +18,7 @@ class PowerTrioDataType(
     override val middleSizing = "888"
 
     override val previewContent = TrioContent(
-        "152", "238", "49/51", "AVG", "L/R", "3SEC",
+        "152", "238", "49/51", "AVG", "3SEC L/R", "3SEC",
         leftIcon = TrioIcon.BOLT, middleIcon = TrioIcon.BOLT, rightIcon = TrioIcon.BOLT,
     )
 
@@ -34,7 +34,7 @@ class PowerTrioDataType(
             middle = text(power3s, 0),
             right = balanceText(balanceLeft),
             leftLabel = "AVG",
-            rightLabel = "L/R",
+            rightLabel = "3SEC L/R",
             middleLabel = "3SEC",
             leftIcon = TrioIcon.BOLT,
             middleIcon = TrioIcon.BOLT,

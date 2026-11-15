@@ -290,12 +290,12 @@ def main(prefix):
         (480, 72, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
     ]
     power = [
-        (480, 110, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
-        (480, 110, False, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
-        (480, 140, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
-        (480, 110, True, ("152", "0", "49/51"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
-        (480, 110, True, ("--", "--", "--"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
-        (480, 110, True, ("187", "1043", "52/48"), (("AVG", "bolt"), ("L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, False, ("152", "238", "49/51"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 140, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("152", "0", "49/51"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("--", "--", "--"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
+        (480, 110, True, ("187", "1043", "52/48"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
     ]
     gear = [
         (480, 110, True, ("48-13", "152", "92"), (("GEAR", "chainring"), ("CAD", "crank"), ("BPM", "heart"))),
