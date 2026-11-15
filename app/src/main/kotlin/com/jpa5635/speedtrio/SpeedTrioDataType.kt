@@ -22,7 +22,7 @@ class SpeedTrioDataType(
     override val middleSizing = "88.8"
 
     override val previewContent = TrioContent(
-        "17.24", "28.3", "42.63", "MPH", "MI", "MPH",
+        "17.24", "28.3", "42.63", "AVG", "MI", "MPH",
         leftIcon = TrioIcon.SPEEDOMETER, middleIcon = TrioIcon.SPEEDOMETER, rightIcon = TrioIcon.SPEEDOMETER,
     )
 
@@ -42,7 +42,7 @@ class SpeedTrioDataType(
             left = text(avgMs?.let { it * speedFactor }, 2),
             middle = text(speedMs?.let { it * speedFactor }, 1),
             right = text(distM?.let { it / if (imperial) M_PER_MILE else 1000.0 }, 2),
-            leftLabel = if (imperial) "MPH" else "KM/H",
+            leftLabel = "AVG",
             rightLabel = if (imperial) "MI" else "KM",
             middleLabel = if (imperial) "MPH" else "KM/H",
             leftIcon = TrioIcon.SPEEDOMETER,

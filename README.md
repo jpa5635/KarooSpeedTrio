@@ -4,7 +4,7 @@ Custom Karoo data fields, each **double width / single height**, showing three v
 
 | field | left | middle | right |
 |---|---|---|---|
-| **Speed Trio** | average speed (`MPH`) | current speed (`MPH`) | ride distance (`MI`) |
+| **Speed Trio** | average speed (`AVG`) | current speed (`MPH`) | ride distance (`MI`) |
 | **Power Trio** | average power (`AVG`) | 3 s power (`3SEC`) | left/right balance (`3SEC L/R`) |
 | **Gear Trio** | gear, e.g. `48-13` (`GEAR`) | heart rate (`BPM`) | cadence (`CAD`) |
 

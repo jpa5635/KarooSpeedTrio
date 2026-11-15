@@ -282,12 +282,12 @@ def sheet(out, title, subtitle, cases, mid_sizing=None):
 
 def main(prefix):
     speed = [
-        (480, 110, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
-        (480, 110, False, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
-        (480, 140, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
-        (480, 110, True, ("24.91", "36.8", "142.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
-        (480, 110, True, ("0.00", "0.0", "0.00"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
-        (480, 72, True, ("17.24", "28.3", "42.63"), (("MPH", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
+        (480, 110, True, ("17.24", "28.3", "42.63"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
+        (480, 110, False, ("17.24", "28.3", "42.63"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
+        (480, 140, True, ("17.24", "28.3", "42.63"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
+        (480, 110, True, ("24.91", "36.8", "142.63"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
+        (480, 110, True, ("0.00", "0.0", "0.00"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer"))),
+        (480, 72, True, ("17.24", "28.3", "42.63"), (("AVG", "speedometer"), ("MI", "speedometer"), ("MPH", "speedometer")), True),
     ]
     power = [
         (480, 110, True, ("152", "238", "49/51"), (("AVG", "bolt"), ("3SEC L/R", "bolt"), ("3SEC", "bolt"))),
